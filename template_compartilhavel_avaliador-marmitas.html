@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avaliador & Organizador - Template Compartilhável</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .star-btn { transition: transform 0.15s ease, color 0.15s ease; }
+    .star-btn:hover { transform: scale(1.2); }
+    .badge-transition { transition: all 0.2s ease-in-out; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
+
+  <!-- TOAST NOTIFICATIONS -->
+  <div id="toast" class="fixed top-5 right-5 z-50 transform transition-all duration-300 translate-y-[-150%] opacity-0 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-slate-700 max-w-sm">
+    <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+    <span id="toast-msg" class="text-sm font-medium">Notificação</span>
+  </div>
+
+  <!-- HEADER -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-200">
+          <i class="fa-solid fa-utensils text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900 tracking-tight leading-tight">Avaliador & Organizador</h1>
+          <p class="text-xs text-slate-500 font-medium">Controle de Refeições e Produtos</p>
+        </div>
+      </div>
+
+      <!-- STATUS & ACTIONS -->
+      <div class="flex items-center flex-wrap gap-2">
+        <div id="connection-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+          <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+          <span>Modo Local (Offline)</span>
+        </div>
+
+        <button id="btn-pull" title="Buscar e atualizar dados salvos na planilha Google" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 shadow-sm transition-all">
+          <i class="fa-solid fa-cloud-arrow-down text-slate-500"></i>
+          <span>Puxar da Planilha</span>
+        </button>
+
+        <button id="btn-push" title="Gravar e sincronizar alterações na planilha Google" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-all">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+          <span>Enviar para Planilha</span>
+        </button>
+
+        <button id="btn-config" title="Configurar conexão com o Google Sheets" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 transition-all">
+          <i class="fa-solid fa-gear text-sm"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+    
+    <!-- CONTROLS BAR: SEARCH, FILTERS & ADD -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm mb-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+      
+      <!-- SEARCH & CATEGORY FILTER -->
+      <div class="flex flex-1 flex-wrap items-center gap-3">
+        <div class="relative flex-1 min-w-[200px]">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+          <input type="text" id="search-input" placeholder="Buscar prato, ingrediente ou nota..." class="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all">
+        </div>
+        
+        <select id="category-filter" class="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          <option value="all">Todas as Categorias</option>
+          <option value="Dia a dia">Dia a dia</option>
+          <option value="Massas">Massas</option>
+          <option value="Vegetarianas">Vegetarianas</option>
+          <option value="Baixa Caloria">Baixa Caloria</option>
+          <option value="Turbinadas">Turbinadas</option>
+        </select>
+
+        <select id="sort-select" class="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          <option value="default">Padrão (Ordem do Catálogo)</option>
+          <option value="rating-desc">Maior Nota ⭐</option>
+          <option value="rating-asc">Menor Nota</option>
+          <option value="name-asc">Nome (A - Z)</option>
+        </select>
+      </div>
+
+      <!-- FILTER PILLS & ADD BUTTON -->
+      <div class="flex items-center flex-wrap gap-2">
+        <button data-filter="top" class="filter-pill px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-transparent transition-all">
+          ⭐ Top (4-5)
+        </button>
+        <button data-filter="lunch" class="filter-pill px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-transparent transition-all">
+          ☀️ Almoço
+        </button>
+        <button data-filter="dinner" class="filter-pill px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-transparent transition-all">
+          🌙 Jantar
+        </button>
+        <button data-filter="norepeat" class="filter-pill px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-transparent transition-all">
+          👎 Não repetiria
+        </button>
+        
+        <button id="btn-add-item" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 transition-all shadow-sm">
+          <i class="fa-solid fa-plus"></i>
+          <span>Adicionar Item</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- CARDS GRID -->
+    <div id="items-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <!-- Inserido dinamicamente via JavaScript -->
+    </div>
+
+    <!-- EMPTY STATE -->
+    <div id="empty-state" class="hidden text-center py-16 bg-white rounded-2xl border border-slate-200/80 shadow-sm">
+      <div class="w-16 h-16 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+        <i class="fa-solid fa-bowl-food text-2xl"></i>
+      </div>
+      <h3 class="text-base font-semibold text-slate-800">Nenhum item encontrado</h3>
+      <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Tente ajustar a busca, alterar os filtros ou clique em "Adicionar Item" para cadastrar novos pratos.</p>
+    </div>
+
+  </main>
+
+  <!-- FOOTER & COPYRIGHT -->
+  <footer class="bg-white border-t border-slate-200 mt-auto py-5 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p class="font-medium">
+        Desenvolvido por <span class="text-slate-800 font-semibold">Ana Laura A. Queiroz</span> via <span class="text-emerald-700 font-semibold">Gemini Canvas</span>
+      </p>
+      <p class="text-slate-400 text-[11px]">
+        Distribuído sob Licença de Uso Pessoal e Não Comercial.
+      </p>
+    </div>
+  </footer>
+
+  <!-- MODAL: CONFIGURAÇÃO DO GOOGLE SHEETS -->
+  <div id="modal-config" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-slate-200 transform transition-all">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2 text-slate-900 font-bold">
+          <i class="fa-solid fa-sliders text-emerald-600"></i>
+          <span>Conectar Google Planilha</span>
+        </div>
+        <button id="modal-config-close" class="text-slate-400 hover:text-slate-700 text-lg">&times;</button>
+      </div>
+
+      <div class="py-4 space-y-4 text-xs text-slate-600">
+        <p class="leading-relaxed">
+          Para sincronizar suas avaliações automaticamente com o Google Drive, conecte um Web App do <strong>Google Apps Script</strong>:
+        </p>
+
+        <ol class="list-decimal pl-4 space-y-2 leading-relaxed">
+          <li>Crie uma nova planilha no seu <strong>Google Sheets</strong>.</li>
+          <li>Acesse <strong>Extensões > Apps Script</strong>, cole o código do script e clique em <strong>Implantar > Nova Implantação</strong> como <em>Web App</em> (Acesso: <em>Qualquer pessoa</em>).</li>
+          <li>Cole a URL gerada (terminada em <code class="bg-slate-100 px-1 py-0.5 rounded text-emerald-700">/exec</code>) no campo abaixo:</li>
+        </ol>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">URL do Webhook (Apps Script)</label>
+          <input type="url" id="input-webhook-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Link Direto da Planilha (Opcional)</label>
+          <input type="url" id="input-sheet-url" placeholder="https://docs.google.com/spreadsheets/d/..." class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+        <button id="btn-save-config" class="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-all">Salvar Conexão</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRMAÇÃO DE ENVIO -->
+  <div id="modal-confirm-push" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-5 border border-slate-200">
+      <div class="flex items-center gap-3 mb-3 text-emerald-700 font-bold text-sm">
+        <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
+        <span>Enviar dados para a Planilha?</span>
+      </div>
+      <p class="text-xs text-slate-600 leading-relaxed mb-4">
+        Os dados da planilha do Google serão substituídos e atualizados exatamente como estão na sua tela agora.
+      </p>
+      <p class="text-[11px] text-slate-400 bg-slate-50 p-2.5 rounded-lg border border-slate-100 mb-4">
+        <i class="fa-solid fa-circle-info mr-1 text-slate-500"></i>
+        Não está atualizando? Verifique se configurou a conexão no botão <strong>⚙️ Configurar Conexão</strong>.
+      </p>
+      <div class="flex items-center justify-end gap-2">
+        <button id="modal-push-cancel" class="px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100">Cancelar</button>
+        <button id="modal-push-confirm" class="px-4 py-1.5 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700">Confirmar e Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRMAÇÃO DE PUXAR DADOS -->
+  <div id="modal-confirm-pull" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-5 border border-slate-200">
+      <div class="flex items-center gap-3 mb-3 text-slate-800 font-bold text-sm">
+        <i class="fa-solid fa-cloud-arrow-down text-lg text-slate-600"></i>
+        <span>Puxar dados da Planilha?</span>
+      </div>
+      <p class="text-xs text-slate-600 leading-relaxed mb-4">
+        Os dados da tela serão substituídos e atualizados pelos dados que estão gravados na sua planilha Google conectada/configurada.
+      </p>
+      <p class="text-[11px] text-slate-400 bg-slate-50 p-2.5 rounded-lg border border-slate-100 mb-4">
+        <i class="fa-solid fa-circle-info mr-1 text-slate-500"></i>
+        Não está carregando? Verifique se configurou a conexão no botão <strong>⚙️ Configurar Conexão</strong>.
+      </p>
+      <div class="flex items-center justify-end gap-2">
+        <button id="modal-pull-cancel" class="px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100">Cancelar</button>
+        <button id="modal-pull-confirm" class="px-4 py-1.5 rounded-lg text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800">Confirmar e Puxar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADICIONAR NOVO ITEM -->
+  <div id="modal-add" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <span class="text-sm font-bold text-slate-900">Cadastrar Nova Refeição / Item</span>
+        <button id="modal-add-close" class="text-slate-400 hover:text-slate-700 text-lg">&times;</button>
+      </div>
+      <form id="form-add-item" class="py-4 space-y-3.5 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Nome do Prato / Item *</label>
+          <input type="text" id="add-name" required placeholder="Ex: Frango grelhado com legumes" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Categoria *</label>
+            <select id="add-category" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              <option value="Dia a dia">Dia a dia</option>
+              <option value="Massas">Massas</option>
+              <option value="Vegetarianas">Vegetarianas</option>
+              <option value="Baixa Caloria">Baixa Caloria</option>
+              <option value="Turbinadas">Turbinadas</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Gramatura (Opcional)</label>
+            <input type="text" id="add-weight" placeholder="Ex: 300g" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+          </div>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Observações Iniciais</label>
+          <textarea id="add-notes" rows="2" placeholder="Sensações, acompanhamentos ou tempero..." class="w-full px-3 py-2 border border-slate-300 rounded-lg"></textarea>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg">Salvar Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // CONFIGURAÇÃO INICIAL (Vazia no template para cada usuário configurar a sua)
+    const HARDCODED_WEBHOOK_URL = ""; 
+    const HARDCODED_SPREADSHEET_URL = "";
+
+    // DADOS INICIAIS DE EXEMPLO
+    const INITIAL_SAMPLE_ITEMS = [
+      { id: "item-1", name: "Estrogonofe de frango, arroz e batata assada", category: "Dia a dia", weight: "300g", rating: 5, mealType: "Almoço", repeat: "Sim", notes: "Muito saboroso e equilibrado." },
+      { id: "item-2", name: "Escondidinho de carne com purê de batata", category: "Dia a dia", weight: "300g", rating: 4, mealType: "Jantar", repeat: "Sim", notes: "Cremoso na medida certa." },
+      { id: "item-3", name: "Nhoque recheado ao molho de tomate", category: "Massas", weight: "300g", rating: 3, mealType: "Almoço", repeat: "Talvez", notes: "Bom para variar o cardápio." },
+      { id: "item-4", name: "Quibe de abóbora com arroz e brócolis", category: "Vegetarianas", weight: "300g", rating: 4, mealType: "Jantar", repeat: "Sim", notes: "Excelente opção sem carne." }
+    ];
+
+    // ESTADO DA APLICAÇÃO
+    let state = {
+      items: [],
+      filter: "all",
+      categoryFilter: "all",
+      searchQuery: "",
+      sortBy: "default",
+      webhookUrl: HARDCODED_WEBHOOK_URL,
+      spreadsheetUrl: HARDCODED_SPREADSHEET_URL
+    };
+
+    let syncDebounceTimer = null;
+
+    // UTILITÁRIOS
+    function showToast(msg, type = "success") {
+      const toast = document.getElementById("toast");
+      const icon = document.getElementById("toast-icon");
+      const msgEl = document.getElementById("toast-msg");
+
+      msgEl.textContent = msg;
+      if (type === "success") {
+        icon.className = "fa-solid fa-circle-check text-emerald-400 text-lg";
+      } else if (type === "error") {
+        icon.className = "fa-solid fa-circle-exclamation text-rose-400 text-lg";
+      } else {
+        icon.className = "fa-solid fa-circle-info text-sky-400 text-lg";
+      }
+
+      toast.classList.remove("translate-y-[-150%]", "opacity-0");
+      setTimeout(() => {
+        toast.classList.add("translate-y-[-150%]", "opacity-0");
+      }, 3500);
+    }
+
+    function generateId(str) {
+      return "item-" + (str ? str.toLowerCase().replace(/[^a-z0-9]/g, "-").slice(0, 30) : Date.now());
+    }
+
+    // PERSISTÊNCIA LOCAL
+    function loadState() {
+      try {
+        const saved = localStorage.getItem("avaliador_items");
+        if (saved) {
+          state.items = JSON.parse(saved);
+        } else {
+          state.items = INITIAL_SAMPLE_ITEMS;
+          saveLocalState();
+        }
+
+        const savedWebhook = localStorage.getItem("avaliador_webhook");
+        if (savedWebhook && !state.webhookUrl) state.webhookUrl = savedWebhook;
+      } catch (e) {
+        state.items = INITIAL_SAMPLE_ITEMS;
+      }
+      updateConnectionStatus();
+    }
+
+    function saveLocalState() {
+      try {
+        localStorage.setItem("avaliador_items", JSON.stringify(state.items));
+      } catch (e) {
+        console.warn("Armazenamento local indisponível:", e);
+      }
+    }
+
+    function updateConnectionStatus() {
+      const badge = document.getElementById("connection-badge");
+      if (state.webhookUrl && state.webhookUrl.trim() !== "") {
+        badge.className = "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200";
+        badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span>Conectado ao Sheets</span>';
+      } else {
+        badge.className = "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200";
+        badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-500"></span><span>Modo Local (Offline)</span>';
+      }
+    }
+
+    // SINCRONIZAÇÃO COM APPS SCRIPT
+    function persistState() {
+      saveLocalState();
+      if (!state.webhookUrl || state.webhookUrl.trim() === "") return;
+
+      clearTimeout(syncDebounceTimer);
+      syncDebounceTimer = setTimeout(() => {
+        fetch(state.webhookUrl, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "save", items: state.items })
+        }).then(() => {
+          showToast("Salvo na planilha Google!");
+        }).catch(() => {
+          showToast("Falha ao sincronizar. Verifique a conexão.", "error");
+        });
+      }, 800);
+    }
+
+    // RENDERIZAÇÃO DOS CARTÕES
+    function render() {
+      const grid = document.getElementById("items-grid");
+      const emptyState = document.getElementById("empty-state");
+
+      // Filtragem
+      let filtered = state.items.filter(item => {
+        // Busca
+        if (state.searchQuery) {
+          const q = state.searchQuery.toLowerCase();
+          const matchName = item.name.toLowerCase().includes(q);
+          const matchNotes = (item.notes || "").toLowerCase().includes(q);
+          const matchCat = (item.category || "").toLowerCase().includes(q);
+          if (!matchName && !matchNotes && !matchCat) return false;
+        }
+
+        // Categoria
+        if (state.categoryFilter !== "all" && item.category !== state.categoryFilter) {
+          return false;
+        }
+
+        // Pílulas de filtro
+        if (state.filter === "top" && (item.rating || 0) < 4) return false;
+        if (state.filter === "lunch" && item.mealType !== "Almoço") return false;
+        if (state.filter === "dinner" && item.mealType !== "Jantar") return false;
+        if (state.filter === "norepeat" && item.repeat !== "Não") return false;
+
+        return true;
+      });
+
+      // Ordenação
+      if (state.sortBy === "rating-desc") {
+        filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      } else if (state.sortBy === "rating-asc") {
+        filtered.sort((a, b) => (a.rating || 0) - (b.rating || 0));
+      } else if (state.sortBy === "name-asc") {
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+      }
+
+      if (filtered.length === 0) {
+        grid.innerHTML = "";
+        emptyState.classList.remove("hidden");
+        return;
+      }
+      emptyState.classList.add("hidden");
+
+      grid.innerHTML = filtered.map(item => `
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-md transition-all p-5 flex flex-col justify-between" data-id="${item.id}">
+          <div>
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide bg-slate-100 text-slate-700">
+                ${item.category || "Geral"} ${item.weight ? "• " + item.weight : ""}
+              </span>
+              <button data-action="delete" data-id="${item.id}" class="text-slate-300 hover:text-rose-500 transition-colors p-1" title="Excluir prato">
+                <i class="fa-solid fa-trash-can pointer-events-none text-xs"></i>
+              </button>
+            </div>
+
+            <h3 class="text-sm font-bold text-slate-900 leading-snug mb-3">${item.name}</h3>
+
+            <!-- AVALIAÇÃO EM ESTRELAS -->
+            <div class="flex items-center gap-1.5 mb-4">
+              <span class="text-xs font-semibold text-slate-500 mr-1">Nota:</span>
+              ${[1, 2, 3, 4, 5].map(star => `
+                <button type="button" data-action="rate" data-id="${item.id}" data-rating="${star}" class="star-btn text-base ${star <= (item.rating || 0) ? "text-amber-400" : "text-slate-200 hover:text-amber-300"}">
+                  <i class="fa-solid fa-star pointer-events-none"></i>
+                </button>
+              `).join("")}
+            </div>
+
+            <!-- OPÇÕES: MOMENTO & REPETIR -->
+            <div class="grid grid-cols-2 gap-2 text-xs mb-3">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-500 mb-1">Melhor Momento:</label>
+                <div class="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 w-full">
+                  <button data-action="meal-type" data-id="${item.id}" data-val="Almoço" class="flex-1 py-1 rounded text-[11px] font-medium transition-all ${item.mealType === "Almoço" ? "bg-white text-slate-900 font-semibold shadow-sm" : "text-slate-500 hover:text-slate-700"}">☀️ Almoço</button>
+                  <button data-action="meal-type" data-id="${item.id}" data-val="Jantar" class="flex-1 py-1 rounded text-[11px] font-medium transition-all ${item.mealType === "Jantar" ? "bg-white text-slate-900 font-semibold shadow-sm" : "text-slate-500 hover:text-slate-700"}">🌙 Jantar</button>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-500 mb-1">Repetiria?</label>
+                <div class="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 w-full">
+                  <button data-action="repeat" data-id="${item.id}" data-val="Sim" class="flex-1 py-1 rounded text-[11px] font-medium transition-all ${item.repeat === "Sim" ? "bg-emerald-500 text-white font-semibold" : "text-slate-500 hover:text-slate-700"}">Sim</button>
+                  <button data-action="repeat" data-id="${item.id}" data-val="Talvez" class="flex-1 py-1 rounded text-[11px] font-medium transition-all ${item.repeat === "Talvez" ? "bg-amber-400 text-slate-900 font-semibold" : "text-slate-500 hover:text-slate-700"}">Talvez</button>
+                  <button data-action="repeat" data-id="${item.id}" data-val="Não" class="flex-1 py-1 rounded text-[11px] font-medium transition-all ${item.repeat === "Não" ? "bg-rose-500 text-white font-semibold" : "text-slate-500 hover:text-slate-700"}">Não</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- OBSERVAÇÕES -->
+          <div class="mt-2 pt-2 border-t border-slate-100">
+            <textarea data-action="notes" data-id="${item.id}" placeholder="Observação (ex: tempero, saciedade, acompanhamento)..." rows="2" class="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:bg-white resize-none transition-all">${item.notes || ""}</textarea>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    // EVENT DELEGATION NOS CARTÕES
+    document.getElementById("items-grid").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-action]");
+      if (!btn) return;
+
+      const action = btn.dataset.action;
+      const id = btn.dataset.id;
+      const item = state.items.find(i => i.id === id);
+      if (!item) return;
+
+      if (action === "rate") {
+        const rating = parseInt(btn.dataset.rating, 10);
+        item.rating = (item.rating === rating) ? 0 : rating;
+        render();
+        persistState();
+      } else if (action === "meal-type") {
+        item.mealType = (item.mealType === btn.dataset.val) ? "" : btn.dataset.val;
+        render();
+        persistState();
+      } else if (action === "repeat") {
+        item.repeat = (item.repeat === btn.dataset.val) ? "" : btn.dataset.val;
+        render();
+        persistState();
+      } else if (action === "delete") {
+        if (confirm(`Deseja remover "${item.name}"?`)) {
+          state.items = state.items.filter(i => i.id !== id);
+          render();
+          persistState();
+          showToast("Item removido.");
+        }
+      }
+    });
+
+    // LISTENER PARA AS OBSERVAÇÕES (TEXTAREA)
+    document.getElementById("items-grid").addEventListener("input", (e) => {
+      if (e.target.dataset.action === "notes") {
+        const id = e.target.dataset.id;
+        const item = state.items.find(i => i.id === id);
+        if (item) {
+          item.notes = e.target.value;
+          persistState();
+        }
+      }
+    });
+
+    // FILTROS & BUSCA
+    document.getElementById("search-input").addEventListener("input", (e) => {
+      state.searchQuery = e.target.value;
+      render();
+    });
+
+    document.getElementById("category-filter").addEventListener("change", (e) => {
+      state.categoryFilter = e.target.value;
+      render();
+    });
+
+    document.getElementById("sort-select").addEventListener("change", (e) => {
+      state.sortBy = e.target.value;
+      render();
+    });
+
+    document.querySelectorAll(".filter-pill").forEach(pill => {
+      pill.addEventListener("click", () => {
+        const filterVal = pill.dataset.filter;
+        if (state.filter === filterVal) {
+          state.filter = "all";
+          pill.classList.remove("bg-slate-900", "text-white");
+          pill.classList.add("bg-slate-100", "text-slate-700");
+        } else {
+          document.querySelectorAll(".filter-pill").forEach(p => {
+            p.classList.remove("bg-slate-900", "text-white");
+            p.classList.add("bg-slate-100", "text-slate-700");
+          });
+          state.filter = filterVal;
+          pill.classList.add("bg-slate-900", "text-white");
+          pill.classList.remove("bg-slate-100", "text-slate-700");
+        }
+        render();
+      });
+    });
+
+    // MODAL DE CONFIGURAÇÃO DO GOOGLE SHEETS
+    const modalConfig = document.getElementById("modal-config");
+    document.getElementById("btn-config").addEventListener("click", () => {
+      document.getElementById("input-webhook-url").value = state.webhookUrl || "";
+      document.getElementById("input-sheet-url").value = state.spreadsheetUrl || "";
+      modalConfig.classList.remove("hidden");
+      modalConfig.classList.add("flex");
+    });
+
+    document.getElementById("modal-config-close").addEventListener("click", () => {
+      modalConfig.classList.add("hidden");
+      modalConfig.classList.remove("flex");
+    });
+
+    document.getElementById("btn-save-config").addEventListener("click", () => {
+      const url = document.getElementById("input-webhook-url").value.trim();
+      state.webhookUrl = url;
+      localStorage.setItem("avaliador_webhook", url);
+      updateConnectionStatus();
+      modalConfig.classList.add("hidden");
+      modalConfig.classList.remove("flex");
+      showToast("Configurações de conexão salvas!");
+    });
+
+    // MODAL: ENVIAR PARA PLANILHA
+    const modalPush = document.getElementById("modal-confirm-push");
+    document.getElementById("btn-push").addEventListener("click", () => {
+      modalPush.classList.remove("hidden");
+      modalPush.classList.add("flex");
+    });
+    document.getElementById("modal-push-cancel").addEventListener("click", () => {
+      modalPush.classList.add("hidden");
+      modalPush.classList.remove("flex");
+    });
+    document.getElementById("modal-push-confirm").addEventListener("click", () => {
+      modalPush.classList.add("hidden");
+      modalPush.classList.remove("flex");
+      if (!state.webhookUrl) {
+        showToast("Configure a URL no botão ⚙️ antes de enviar.", "info");
+        return;
+      }
+      fetch(state.webhookUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "save", items: state.items })
+      }).then(() => {
+        showToast("Dados enviados com sucesso para a planilha!");
+      }).catch(() => {
+        showToast("Erro ao conectar com a planilha.", "error");
+      });
+    });
+
+    // MODAL: PUXAR DA PLANILHA
+    const modalPull = document.getElementById("modal-confirm-pull");
+    document.getElementById("btn-pull").addEventListener("click", () => {
+      modalPull.classList.remove("hidden");
+      modalPull.classList.add("flex");
+    });
+    document.getElementById("modal-pull-cancel").addEventListener("click", () => {
+      modalPull.classList.add("hidden");
+      modalPull.classList.remove("flex");
+    });
+    document.getElementById("modal-pull-confirm").addEventListener("click", () => {
+      modalPull.classList.add("hidden");
+      modalPull.classList.remove("flex");
+      if (!state.webhookUrl) {
+        showToast("Configure a URL no botão ⚙️ antes de puxar.", "info");
+        return;
+      }
+      showToast("Buscando dados da planilha...", "info");
+      fetch(state.webhookUrl + "?action=get")
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            state.items = data;
+            saveLocalState();
+            render();
+            showToast("Dados atualizados com sucesso da planilha!");
+          } else {
+            showToast("Planilha vazia ou em formato diferente.", "info");
+          }
+        })
+        .catch(err => {
+          showToast("Erro ao carregar dados. Verifique a URL do Apps Script.", "error");
+        });
+    });
+
+    // MODAL: ADICIONAR ITEM
+    const modalAdd = document.getElementById("modal-add");
+    document.getElementById("btn-add-item").addEventListener("click", () => {
+      modalAdd.classList.remove("hidden");
+      modalAdd.classList.add("flex");
+    });
+    document.getElementById("modal-add-close").addEventListener("click", () => {
+      modalAdd.classList.add("hidden");
+      modalAdd.classList.remove("flex");
+    });
+    document.getElementById("form-add-item").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = document.getElementById("add-name").value.trim();
+      const category = document.getElementById("add-category").value;
+      const weight = document.getElementById("add-weight").value.trim();
+      const notes = document.getElementById("add-notes").value.trim();
+
+      const newItem = {
+        id: generateId(name),
+        name,
+        category,
+        weight,
+        rating: 0,
+        mealType: "",
+        repeat: "",
+        notes
+      };
+
+      state.items.unshift(newItem);
+      render();
+      persistState();
+
+      // Reset
+      document.getElementById("form-add-item").reset();
+      modalAdd.classList.add("hidden");
+      modalAdd.classList.remove("flex");
+      showToast("Item adicionado com sucesso!");
+    });
+
+    // INICIALIZAÇÃO
+    window.addEventListener("DOMContentLoaded", () => {
+      loadState();
+      render();
+    });
+  </script>
+</body>
+</html>
