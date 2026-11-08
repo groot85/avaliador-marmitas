@@ -33,9 +33,9 @@ Desenvolvido por **Ana Laura A. Queiroz** via **Gemini Canvas**.
 ## 📁 Estrutura do Repositório
 
 ```text
-├── index.html                     # Versão pronta para uso com catálogo pré-carregado
-├── template_compartilhavel.html   # Template neutro para qualquer pessoa personalizar
-└── README.md                      # Documentação completa do projeto
+├── index.html                                          # Versão pronta para uso com catálogo pré-carregado
+├── template_compartilhavel_avaliador-marmitas.html    # Template neutro para qualquer pessoa personalizar
+└── README.md                                          # Documentação completa do projeto
 ```
 
 ---
