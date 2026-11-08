@@ -198,6 +198,24 @@ Dessa forma, o aplicativo já iniciará permanentemente conectado, imune à limp
 
 ---
 
+## 🎥 Bastidores & Processo de Criação
+
+Todo o processo de concepção, codificação e refinamento deste projeto foi construído ao vivo em parceria com o **Google Gemini (Gemini Canvas)**.
+
+A gravação completa detalha passo a passo a escolha das tecnologias, a modelagem dos dados, a persistência com o Google Apps Script e a transformação do projeto em um template reutilizável:
+
+[![Criando um app com o Gemini para avaliar minhas compras](https://img.youtube.com/vi/OJHucWG3nAE/maxresdefault.jpg)](https://www.youtube.com/watch?v=OJHucWG3nAE)
+
+> 📺 **Assista à live completa:** [Criando um app com o Gemini para avaliar minhas compras](https://www.youtube.com/watch?v=OJHucWG3nAE)  
+> **Canal:** Ana Laura Queiroz | analauravirtual  
+> **Tópicos abordados:**
+> - Prototipagem da interface responsiva com Tailwind CSS e Font Awesome
+> - Resolução do isolamento de contexto do Google Sites e estabilização do estado local
+> - Integração bidirecional com o Google Sheets via Webhook no Apps Script
+> - Separação da versão de produção da versão template neutra para compartilhamento
+
+---
+
 ## 📄 Licença e Créditos
 
 Distribuído sob a licença MIT. Consulte `LICENSE` para mais detalhes.
